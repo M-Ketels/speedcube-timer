@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import { BookOpen, FolderGit2, LayoutGrid, ClipboardList, Clock } from '@lucide/vue';
 import {
     Sidebar,
     SidebarContent,
@@ -14,7 +14,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { dashboard, solvesIndex, solvesCreate, solvesTimer } from '@/routes';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -23,6 +23,21 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Previous Solves',
+        href: solvesIndex(),
+        icon: ClipboardList,
+    },
+    {
+        title: 'Timer (manual)',
+        href: solvesCreate(),
+        icon: Clock,
+    },
+    {
+        title: 'Timer',
+        href: solvesTimer(),
+        icon: Clock,
+    }
 ];
 
 const footerNavItems: NavItem[] = [

@@ -17,6 +17,9 @@ const state = ref<TimerState>('idle'); // ref() makes the variable reactive
 const selectedPuzzle = ref('333');
 const currentScramble = ref('loading scramble');
 
+// penalty state
+const currentPenalty = ref<string | null>(null);
+
 const puzzleOptions = [
     { id: '222', name: '2x2x2' },
     { id: '333', name: '3x3x3' },
@@ -81,13 +84,25 @@ const stopTimer = () => {
     cancelAnimationFrame(animationFrameId);
 };
 
+const togglePenalty = (type: '+2' | 'DNF') => {
+    // If it's already selected, clicking it again turns it off
+    currentPenalty.value = currentPenalty.value === type ? null : type;
+};
+
+const discardSolve = () => {
+    timeMs.value = 0;
+    currentPenalty.value = null;
+    state.value = 'idle';
+    generateNewScramble();
+};
+
 const saveAndReset = () => {
     // Fire a background POST request to save the solve
     router.post('/solves', {
         puzzle_type: selectedPuzzle.value, // Hardcoded for now
         solve_time_ms: Math.floor(timeMs.value),
         scramble: currentScramble.value, // Dummy scramble for now
-        penalty: null,
+        penalty: currentPenalty.value,
     }, {
         preserveState: true, // Don't reset our Vue variables automatically
         preserveScroll: true, // Don't jump the page around
@@ -95,6 +110,7 @@ const saveAndReset = () => {
             // Once saved, reset everything for the next solve!
             timeMs.value = 0;
             state.value = 'idle';
+            currentPenalty.value = null;
             generateNewScramble();
         }
     });
@@ -176,6 +192,27 @@ onUnmounted(() => {
                         }">
                         {{ formattedTime }}
                     </h1>
+
+                    <div class="flex gap-4 h-10 transition-opacity duration-200"
+                         :class="{ 'opacity-0 pointer-events-none': state !== 'stopped' }">
+
+                        <button @click="togglePenalty('+2')"
+                                class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-colors"
+                                :class="currentPenalty === '+2' ? 'bg-yellow-500 text-white border-yellow-500' : 'text-gray-400 border-gray-300 hover:text-gray-600 dark:border-zinc-700 dark:hover:text-gray-200'">
+                            +2
+                        </button>
+
+                        <button @click="togglePenalty('DNF')"
+                                class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-colors"
+                                :class="currentPenalty === 'DNF' ? 'bg-red-500 text-white border-red-500' : 'text-gray-400 border-gray-300 hover:text-gray-600 dark:border-zinc-700 dark:hover:text-gray-200'">
+                            DNF
+                        </button>
+
+                        <button @click="discardSolve"
+                                class="px-6 py-1.5 font-mono text-sm font-bold rounded border text-gray-400 border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:border-zinc-700 dark:hover:bg-red-900/30 transition-colors">
+                            Discard
+                        </button>
+                    </div>
 
                     <p class="text-gray-500 text-sm h-6">
                         <span v-if="state === 'idle'">Hold Spacebar to prime</span>

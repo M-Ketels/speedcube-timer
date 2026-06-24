@@ -15,6 +15,7 @@ const state = ref<TimerState>('idle'); // ref() makes the variable reactive
 
 // scramble states
 const selectedPuzzle = ref('333');
+const isManualScramble = ref(true);
 const currentScramble = ref('loading scramble');
 
 // penalty state
@@ -30,6 +31,10 @@ const puzzleOptions = [
 ];
 
 const generateNewScramble = async () => {
+    if (isManualScramble.value) {
+        currentScramble.value = 'User-generated scramble';
+        return;
+    }
     currentScramble.value = 'Generating...';
     try {
         const scramble = await randomScrambleForEvent(selectedPuzzle.value);
@@ -70,13 +75,14 @@ generateNewScramble() // calling once so when the page loads for the first time,
 
 // Timer Actions
 const startTimer = () => {
-    startTime = performance.now();
+    // BUG 2 FIX: Kill any ghost timers before starting a new one!
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
+    startTime = performance.now();
     const updateTime = () => {
         timeMs.value = performance.now() - startTime;
         animationFrameId = requestAnimationFrame(updateTime);
     };
-
     animationFrameId = requestAnimationFrame(updateTime);
 };
 
@@ -93,6 +99,12 @@ const discardSolve = () => {
     timeMs.value = 0;
     currentPenalty.value = null;
     state.value = 'idle';
+    generateNewScramble();
+};
+
+const handlePuzzleChange = (e: Event) => {
+    // Remove focus from the dropdown after selecting, so spacebar doesn't reopen it
+    (e.target as HTMLElement).blur();
     generateNewScramble();
 };
 
@@ -116,7 +128,7 @@ const saveAndReset = () => {
     });
 };
 
-// --- Keyboard Event Listeners ---
+// Keyboard Event Listeners
 const handleKeydown = (e: KeyboardEvent) => {
     if (e.code !== 'Space') return;
 
@@ -147,7 +159,7 @@ const handleKeyup = (e: KeyboardEvent) => {
     }
 };
 
-// --- Lifecycle Hooks ---
+// Lifecycle Hooks
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('keyup', handleKeyup);
@@ -169,16 +181,29 @@ onUnmounted(() => {
 
                 <div class="text-center space-y-4">
 
-                    <select
-                        v-model="selectedPuzzle"
-                        @change="generateNewScramble"
-                        class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-mono text-sm focus:ring-0 cursor-pointer transition-all"
-                        :class="{ 'opacity-0': state === 'running' }"
-                    >
-                        <option v-for="puzzle in puzzleOptions" :key="puzzle.id" :value="puzzle.id" class="text-gray-900">
-                            {{ puzzle.name }}
-                        </option>
-                    </select>
+                    <div class="flex items-center gap-6 transition-opacity duration-200" :class="{ 'opacity-0 pointer-events-none': state === 'running' }">
+
+                        <select
+                            v-model="selectedPuzzle"
+                            @change="handlePuzzleChange"
+                            class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-mono text-sm focus:ring-0 cursor-pointer transition-colors"
+                        >
+                            <option v-for="puzzle in puzzleOptions" :key="puzzle.id" :value="puzzle.id" class="text-gray-900">
+                                {{ puzzle.name }}
+                            </option>
+                        </select>
+
+                        <label class="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-mono text-sm transition-colors group">
+                            <input
+                                type="checkbox"
+                                v-model="isManualScramble"
+                                @change="handlePuzzleChange"
+                                class="rounded border-gray-300 text-blue-500 focus:ring-0 bg-transparent cursor-pointer"
+                            >
+                            <span>Hand Scramble</span>
+                        </label>
+
+                    </div>
                     <p class="text-gray-400 font-mono text-xl" :class="{ 'opacity-0': state === 'running' }">
                         {{ currentScramble }}
                     </p>
@@ -196,19 +221,19 @@ onUnmounted(() => {
                     <div class="flex gap-4 h-10 transition-opacity duration-200"
                          :class="{ 'opacity-0 pointer-events-none': state !== 'stopped' }">
 
-                        <button @click="togglePenalty('+2')"
+                        <button @mousedown.prevent @click="togglePenalty('+2')"
                                 class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-colors"
                                 :class="currentPenalty === '+2' ? 'bg-yellow-500 text-white border-yellow-500' : 'text-gray-400 border-gray-300 hover:text-gray-600 dark:border-zinc-700 dark:hover:text-gray-200'">
                             +2
                         </button>
 
-                        <button @click="togglePenalty('DNF')"
+                        <button @mousedown.prevent @click="togglePenalty('DNF')"
                                 class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-colors"
                                 :class="currentPenalty === 'DNF' ? 'bg-red-500 text-white border-red-500' : 'text-gray-400 border-gray-300 hover:text-gray-600 dark:border-zinc-700 dark:hover:text-gray-200'">
                             DNF
                         </button>
 
-                        <button @click="discardSolve"
+                        <button @mousedown.prevent @click="discardSolve"
                                 class="px-6 py-1.5 font-mono text-sm font-bold rounded border text-gray-400 border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:border-zinc-700 dark:hover:bg-red-900/30 transition-colors">
                             Discard
                         </button>

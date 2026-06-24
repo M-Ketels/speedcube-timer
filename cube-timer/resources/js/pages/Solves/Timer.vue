@@ -2,6 +2,9 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 
+// wCA scramble generator
+import { randomScrambleForEvent} from 'cubing/scramble';
+
 defineOptions({
     layout: { breadcrumbs: [{ title: 'Timer', href: '/timer' }] },
 });
@@ -9,6 +12,30 @@ defineOptions({
 // states
 type TimerState = 'idle' | 'priming' | 'running' | 'stopped';
 const state = ref<TimerState>('idle'); // ref() makes the variable reactive
+
+// scramble states
+const selectedPuzzle = ref('333');
+const currentScramble = ref('loading scramble');
+
+const puzzleOptions = [
+    { id: '222', name: '2x2x2' },
+    { id: '333', name: '3x3x3' },
+    { id: '444', name: '4x4x4' },
+    { id: 'pyram', name: 'Pyraminx' },
+    { id: 'minx', name: 'Megaminx' },
+    { id: 'skewb', name: 'Skewb' },
+];
+
+const generateNewScramble = async () => {
+    currentScramble.value = 'Generating...';
+    try {
+        const scramble = await randomScrambleForEvent(selectedPuzzle.value);
+        currentScramble.value = scramble.toString();
+    } catch (error) {
+        currentScramble.value = 'Could not generate scramble';
+        console.error('Scramble generation failed:', error);
+    }
+}
 
 // timer vars
 const timeMs = ref(0);
@@ -36,6 +63,8 @@ const formattedTime = computed(() => {
     return `${seconds}.${paddedMs}`;
 });
 
+generateNewScramble() // calling once so when the page loads for the first time, it has a scramble preloaded
+
 // Timer Actions
 const startTimer = () => {
     startTime = performance.now();
@@ -55,9 +84,9 @@ const stopTimer = () => {
 const saveAndReset = () => {
     // Fire a background POST request to save the solve
     router.post('/solves', {
-        puzzle_type: '3x3x3', // Hardcoded for now
+        puzzle_type: selectedPuzzle.value, // Hardcoded for now
         solve_time_ms: Math.floor(timeMs.value),
-        scramble: 'R U R\' U\'', // Dummy scramble for now
+        scramble: currentScramble.value, // Dummy scramble for now
         penalty: null,
     }, {
         preserveState: true, // Don't reset our Vue variables automatically
@@ -66,6 +95,7 @@ const saveAndReset = () => {
             // Once saved, reset everything for the next solve!
             timeMs.value = 0;
             state.value = 'idle';
+            generateNewScramble();
         }
     });
 };
@@ -122,8 +152,19 @@ onUnmounted(() => {
             <div class="bg-white dark:bg-zinc-900 overflow-hidden shadow-sm sm:rounded-lg p-12 min-h-[60vh] flex flex-col justify-center items-center relative">
 
                 <div class="text-center space-y-4">
+
+                    <select
+                        v-model="selectedPuzzle"
+                        @change="generateNewScramble"
+                        class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-mono text-sm focus:ring-0 cursor-pointer transition-all"
+                        :class="{ 'opacity-0': state === 'running' }"
+                    >
+                        <option v-for="puzzle in puzzleOptions" :key="puzzle.id" :value="puzzle.id" class="text-gray-900">
+                            {{ puzzle.name }}
+                        </option>
+                    </select>
                     <p class="text-gray-400 font-mono text-xl" :class="{ 'opacity-0': state === 'running' }">
-                        Scramble goes here...
+                        {{ currentScramble }}
                     </p>
 
                     <h1 class="text-8xl font-mono font-bold tracking-tighter select-none transition-colors duration-100"

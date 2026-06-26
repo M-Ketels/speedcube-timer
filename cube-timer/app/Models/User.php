@@ -49,4 +49,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Solve::class);
     }
+
+    public function settings(): HasOne
+    {
+        return $this->hasOne(UserSetting::class);
+    }
 }

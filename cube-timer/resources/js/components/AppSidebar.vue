@@ -4,7 +4,7 @@ import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import { BookOpen, FolderGit2, LayoutGrid, ClipboardList, Clock } from '@lucide/vue';
+import { BookOpen, FolderGit2, LayoutGrid, ClipboardList, Clock, Settings } from '@lucide/vue';
 import {
     Sidebar,
     SidebarContent,
@@ -37,7 +37,7 @@ const mainNavItems: NavItem[] = [
         title: 'Timer',
         href: solvesTimer(),
         icon: Clock,
-    }
+    },
 ];
 
 const footerNavItems: NavItem[] = [

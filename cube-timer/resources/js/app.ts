@@ -1,9 +1,12 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3'; // Added router
+import { createApp, h } from 'vue'; // Added Vue imports
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+
+import themesData from './themes.json';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -20,6 +23,27 @@ createInertiaApp({
             default:
                 return AppLayout;
         }
+    },
+
+    setup({ el, App, props, plugin }) {
+
+        const applyTheme = (themeName: string) => {
+            const themeConfig = themesData[themeName as keyof typeof themesData] || themesData['default_dark'];
+
+            Object.entries(themeConfig.colors).forEach(([cssVariable, value]) => {
+                document.documentElement.style.setProperty(cssVariable, value);
+            });
+        };
+
+        applyTheme(props.initialPage.props.auth?.user?.theme_name);
+
+        router.on('navigate', (event) => {
+            applyTheme(event.detail.page.props.auth?.user?.theme_name);
+        });
+
+        createApp({ render: () => h(App, props) })
+            .use(plugin)
+            .mount(el);
     },
     progress: {
         color: '#4B5563',

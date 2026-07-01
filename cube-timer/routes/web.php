@@ -12,10 +12,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/solves/create', [SolveController::class, 'create'])->name('solvesCreate');
     Route::post('/solves', [SolveController::class, 'store'])->name('solvesStore');
 
+    Route::post('/solves/import', [\App\Http\Controllers\SolveController::class, 'import'])->name('solvesImport');
+    Route::get('/solves/export', [\App\Http\Controllers\SolveController::class, 'export'])->name('solvesExport');
+
     Route::get('/timer', [SolveController::class, 'timer'])->name('solvesTimer');
 
     //Route::get('/settings', [UserSettingController::class, 'edit'])->name('settingsEdit');
     Route::patch('/settings', [UserSettingController::class, 'update'])->name('settingsUpdate');
+
+
 
 });
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, usePage } from '@inertiajs/vue3';
+import { Form, Head, usePage, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
@@ -23,6 +23,25 @@ defineOptions({
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+
+const importForm = useForm({
+    csv_file: null as File | null,
+});
+
+const handleFileUpload = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        importForm.csv_file = target.files[0];
+        importForm.post('/solves/import', {
+            preserveScroll: true,
+            onSuccess: () => {
+                alert('Solves successfully imported!');
+                importForm.reset();
+            },
+        });
+    }
+};
+
 </script>
 
 <template>
@@ -79,5 +98,38 @@ const user = computed(() => page.props.auth.user);
         </Form>
     </div>
 
+    <div class="flex flex-col space-y-6 mt-12 mb-12">
+        <Heading
+            variant="small"
+            title="Data Management"
+            description="Import legacy solves from your phone, or export a backup of your current database."
+        />
+
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a href="/solves/export"
+               class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+            >
+                Export CSV Backup
+            </a>
+
+            <div class="relative">
+                <input
+                    type="file"
+                    id="csv_import"
+                    accept=".csv"
+                    @change="handleFileUpload"
+                    class="hidden"
+                />
+                <Button as="label" for="csv_import" variant="outline" class="cursor-pointer w-full sm:w-auto" :disabled="importForm.processing">
+                    <span v-if="importForm.processing">Importing...</span>
+                    <span v-else>Import CSV</span>
+                </Button>
+            </div>
+        </div>
+        <InputError class="mt-2" :message="importForm.errors.csv_file" />
+    </div>
+
     <DeleteUser />
+
+
 </template>

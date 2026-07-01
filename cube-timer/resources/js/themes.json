@@ -4,9 +4,14 @@
         "colors": {
             "--background": "hsl(0 0% 3.9%)",
             "--foreground": "hsl(0 0% 98%)",
+            "--card": "hsl(0 0% 9%)",
+            "--muted": "hsl(0 0% 15%)",
+            "--border": "hsl(0 0% 14.9%)",
             "--primary": "hsl(0 0% 98%)",
             "--primary-foreground": "hsl(0 0% 9%)",
-            "--border": "hsl(0 0% 14.9%)"
+            "--accent": "hsl(0 0% 20%)",
+            "--accent-foreground": "hsl(0 0% 98%)",
+            "--ring": "hsl(0 0% 83.1%)"
         }
     },
     "matcha_moccha": {
@@ -14,19 +19,29 @@
         "colors": {
             "--background": "hsl(30 20% 12%)",
             "--foreground": "hsl(30 20% 90%)",
+            "--card": "hsl(30 20% 16%)",
+            "--muted": "hsl(30 20% 20%)",
+            "--border": "hsl(30 20% 25%)",
             "--primary": "hsl(135 25% 60%)",
             "--primary-foreground": "hsl(30 20% 12%)",
-            "--border": "hsl(30 20% 20%)"
+            "--accent": "hsl(40 40% 50%)",
+            "--accent-foreground": "hsl(30 20% 90%)",
+            "--ring": "hsl(135 25% 60%)"
         }
     },
-    "serika_dark": {
-        "name": "Serika Dark",
+    "dark_magic_girl": {
+        "name": "Dark Magic Girl",
         "colors": {
-            "--background": "hsl(220 5% 20%)",
-            "--foreground": "hsl(60 10% 85%)",
-            "--primary": "hsl(45 90% 50%)",
-            "--primary-foreground": "hsl(220 5% 10%)",
-            "--border": "hsl(220 5% 30%)"
+            "--background": "hsl(202 66% 10%)",
+            "--foreground": "hsl(259 53% 69%)",
+            "--card": "hsl(202 70% 13%)",
+            "--muted": "hsl(202 70% 15%)",
+            "--border": "hsl(202 70% 20%)",
+            "--primary": "hsl(336 75% 83%)",
+            "--primary-foreground": "hsl(202 66% 10%)",
+            "--accent": "hsl(165 62% 74%)",
+            "--accent-foreground": "hsl(202 66% 10%)",
+            "--ring": "hsl(336 75% 83%)"
         }
     }
 }

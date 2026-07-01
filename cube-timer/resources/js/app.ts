@@ -33,8 +33,14 @@ createInertiaApp({
             Object.entries(themeConfig.colors).forEach(([cssVariable, value]) => {
                 document.documentElement.style.setProperty(cssVariable, value);
             });
-        };
 
+            document.documentElement.style.setProperty('--sidebar-background', themeConfig.colors['--card']);
+            document.documentElement.style.setProperty('--sidebar-border', themeConfig.colors['--border']);
+            document.documentElement.style.setProperty('--sidebar-foreground', themeConfig.colors['--foreground']);
+            document.documentElement.style.setProperty('--sidebar-accent', themeConfig.colors['--muted']);
+            document.documentElement.style.setProperty('--sidebar-accent-foreground', themeConfig.colors['--primary']);
+            document.documentElement.style.setProperty('--sidebar-ring', themeConfig.colors['--ring']);
+        };
         applyTheme(props.initialPage.props.auth?.user?.theme_name);
 
         router.on('navigate', (event) => {

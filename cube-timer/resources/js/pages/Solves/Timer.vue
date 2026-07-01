@@ -11,7 +11,7 @@ defineOptions({
 
 // states
 type TimerState = 'idle' | 'priming' | 'running' | 'stopped';
-const state = ref<TimerState>('idle'); // ref() makes the variable reactive
+const state = ref<TimerState>('idle');
 
 // scramble states
 const selectedPuzzle = ref('333');
@@ -50,16 +50,11 @@ const timeMs = ref(0);
 let startTime = 0;
 let animationFrameId = 0;
 
-/**
- * returns the timeMs const but as a string where sub-10 seconds: x.xx
- * sub 60 seconds: xx.xx
- * over 1 minute: x:xx.xx
- */
 const formattedTime = computed(() => {
     const totalSeconds = Math.floor(timeMs.value / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    const milliseconds = Math.floor((timeMs.value % 1000) / 10); // 2 digits for ms
+    const milliseconds = Math.floor((timeMs.value % 1000) / 10);
 
     const paddedMs = milliseconds.toString().padStart(2, '0');
 
@@ -71,11 +66,10 @@ const formattedTime = computed(() => {
     return `${seconds}.${paddedMs}`;
 });
 
-generateNewScramble() // calling once so when the page loads for the first time, it has a scramble preloaded
+generateNewScramble();
 
 // Timer Actions
 const startTimer = () => {
-    // BUG 2 FIX: Kill any ghost timers before starting a new one!
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
     startTime = performance.now();
@@ -91,7 +85,6 @@ const stopTimer = () => {
 };
 
 const togglePenalty = (type: '+2' | 'DNF') => {
-    // If it's already selected, clicking it again turns it off
     currentPenalty.value = currentPenalty.value === type ? null : type;
 };
 
@@ -103,23 +96,20 @@ const discardSolve = () => {
 };
 
 const handlePuzzleChange = (e: Event) => {
-    // Remove focus from the dropdown after selecting, so spacebar doesn't reopen it
     (e.target as HTMLElement).blur();
     generateNewScramble();
 };
 
 const saveAndReset = () => {
-    // Fire a background POST request to save the solve
     router.post('/solves', {
-        puzzle_type: selectedPuzzle.value, // Hardcoded for now
+        puzzle_type: selectedPuzzle.value,
         solve_time_ms: Math.floor(timeMs.value),
-        scramble: currentScramble.value, // Dummy scramble for now
+        scramble: currentScramble.value,
         penalty: currentPenalty.value,
     }, {
-        preserveState: true, // Don't reset our Vue variables automatically
-        preserveScroll: true, // Don't jump the page around
+        preserveState: true,
+        preserveScroll: true,
         onSuccess: () => {
-            // Once saved, reset everything for the next solve!
             timeMs.value = 0;
             state.value = 'idle';
             currentPenalty.value = null;
@@ -131,15 +121,12 @@ const saveAndReset = () => {
 // Keyboard Event Listeners
 const handleKeydown = (e: KeyboardEvent) => {
     if (e.code !== 'Space') return;
-
-    // Crucial: OS triggers continuous keydown events if you hold a key. Ignore repeats!
     if (e.repeat) return;
-
-    e.preventDefault(); // Stop spacebar from scrolling the page
+    e.preventDefault();
 
     if (state.value === 'idle') {
         state.value = 'priming';
-        timeMs.value = 0; // Reset visual timer
+        timeMs.value = 0;
     }
     else if (state.value === 'running') {
         stopTimer();
@@ -175,79 +162,80 @@ onUnmounted(() => {
 <template>
     <Head title="Timer" />
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-zinc-900 overflow-hidden shadow-sm sm:rounded-lg p-12 min-h-[60vh] flex flex-col justify-center items-center relative">
+    <div class="w-full h-full min-h-[80vh] flex flex-col relative py-8 px-4 sm:px-8">
+        <div class="absolute top-8 left-8 z-10 flex items-center gap-4 transition-opacity duration-200" :class="{ 'opacity-0 pointer-events-none': state === 'running' }">
+            <select
+                v-model="selectedPuzzle"
+                @change="handlePuzzleChange"
+                class="bg-transparent border-border text-muted-foreground hover:text-foreground font-mono text-sm focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer transition-colors rounded-md py-1.5 pl-3 pr-8 shadow-sm"
+            >
+                <option v-for="puzzle in puzzleOptions" :key="puzzle.id" :value="puzzle.id" class="bg-card text-foreground">
+                    {{ puzzle.name }}
+                </option>
+            </select>
+        </div>
+        <div class="flex flex-col justify-center items-center flex-1 w-full relative">
 
-                <div class="text-center space-y-4">
+            <h1 class="text-9xl font-mono font-bold tracking-tighter select-none transition-colors duration-100 mb-8"
+                :class="{
+                    'text-foreground': state === 'idle' || state === 'running',
+                    'text-green-500': state === 'priming',
+                    'text-primary': state === 'stopped'
+                }">
+                {{ formattedTime }}
+            </h1>
 
-                    <div class="flex items-center gap-6 transition-opacity duration-200" :class="{ 'opacity-0 pointer-events-none': state === 'running' }">
+            <div class="flex gap-4 h-10 transition-opacity duration-200"
+                 :class="{ 'opacity-0 pointer-events-none': state !== 'stopped' }">
 
-                        <select
-                            v-model="selectedPuzzle"
+                <button @mousedown.prevent @click="togglePenalty('+2')"
+                        class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-all"
+                        :class="currentPenalty === '+2' ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'">
+                    +2
+                </button>
+
+                <button @mousedown.prevent @click="togglePenalty('DNF')"
+                        class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-all"
+                        :class="currentPenalty === 'DNF' ? 'bg-destructive text-destructive-foreground border-destructive shadow-md' : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'">
+                    DNF
+                </button>
+
+                <button @mousedown.prevent @click="discardSolve"
+                        class="px-6 py-1.5 font-mono text-sm font-bold rounded border text-muted-foreground border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all">
+                    Discard
+                </button>
+            </div>
+
+            <div class="mt-12 flex flex-col items-center max-w-4xl transition-opacity duration-200" :class="{ 'opacity-0 pointer-events-none': state === 'running' }">
+
+                <p class="text-muted-foreground font-mono text-xl text-center mb-6 leading-relaxed">
+                    {{ currentScramble }}
+                </p>
+
+                <label class="flex items-center gap-3 cursor-pointer text-muted-foreground hover:text-foreground font-mono text-sm transition-colors group">
+                    <div class="relative flex items-center justify-center">
+                        <input
+                            type="checkbox"
+                            v-model="isManualScramble"
                             @change="handlePuzzleChange"
-                            class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-mono text-sm focus:ring-0 cursor-pointer transition-colors"
+                            class="peer appearance-none w-4 h-4 border-2 border-muted-foreground rounded-sm checked:bg-primary checked:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-all cursor-pointer"
                         >
-                            <option v-for="puzzle in puzzleOptions" :key="puzzle.id" :value="puzzle.id" class="text-gray-900">
-                                {{ puzzle.name }}
-                            </option>
-                        </select>
-
-                        <label class="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-mono text-sm transition-colors group">
-                            <input
-                                type="checkbox"
-                                v-model="isManualScramble"
-                                @change="handlePuzzleChange"
-                                class="rounded border-gray-300 text-blue-500 focus:ring-0 bg-transparent cursor-pointer"
-                            >
-                            <span>Hand Scramble</span>
-                        </label>
-
+                        <svg class="absolute w-3 h-3 text-primary-foreground opacity-0 peer-checked:opacity-100 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
                     </div>
-                    <p class="text-gray-400 font-mono text-xl" :class="{ 'opacity-0': state === 'running' }">
-                        {{ currentScramble }}
-                    </p>
-
-                    <h1 class="text-8xl font-mono font-bold tracking-tighter select-none transition-colors duration-100"
-                        :class="{
-                            'text-gray-900 dark:text-gray-100': state === 'idle',
-                            'text-green-500': state === 'priming',
-                            'text-gray-900 dark:text-gray-100': state === 'running',
-                            'text-blue-500': state === 'stopped'
-                        }">
-                        {{ formattedTime }}
-                    </h1>
-
-                    <div class="flex gap-4 h-10 transition-opacity duration-200"
-                         :class="{ 'opacity-0 pointer-events-none': state !== 'stopped' }">
-
-                        <button @mousedown.prevent @click="togglePenalty('+2')"
-                                class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-colors"
-                                :class="currentPenalty === '+2' ? 'bg-yellow-500 text-white border-yellow-500' : 'text-gray-400 border-gray-300 hover:text-gray-600 dark:border-zinc-700 dark:hover:text-gray-200'">
-                            +2
-                        </button>
-
-                        <button @mousedown.prevent @click="togglePenalty('DNF')"
-                                class="px-6 py-1.5 font-mono text-sm font-bold rounded border transition-colors"
-                                :class="currentPenalty === 'DNF' ? 'bg-red-500 text-white border-red-500' : 'text-gray-400 border-gray-300 hover:text-gray-600 dark:border-zinc-700 dark:hover:text-gray-200'">
-                            DNF
-                        </button>
-
-                        <button @mousedown.prevent @click="discardSolve"
-                                class="px-6 py-1.5 font-mono text-sm font-bold rounded border text-gray-400 border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:border-zinc-700 dark:hover:bg-red-900/30 transition-colors">
-                            Discard
-                        </button>
-                    </div>
-
-                    <p class="text-gray-500 text-sm h-6">
-                        <span v-if="state === 'idle'">Hold Spacebar to prime</span>
-                        <span v-if="state === 'priming'">Release Spacebar to start</span>
-                        <span v-if="state === 'running'">&nbsp;</span>
-                        <span v-if="state === 'stopped'">Press Spacebar to save and reset</span>
-                    </p>
-                </div>
+                    <span>Hand Scramble</span>
+                </label>
 
             </div>
+
+            <p class="text-muted-foreground/50 text-sm font-mono absolute bottom-0">
+                <span v-if="state === 'idle'">Hold Spacebar to prime</span>
+                <span v-if="state === 'priming'">Release Spacebar to start</span>
+                <span v-if="state === 'running'">&nbsp;</span>
+                <span v-if="state === 'stopped'">Press Spacebar to save and reset</span>
+            </p>
+
         </div>
     </div>
 </template>

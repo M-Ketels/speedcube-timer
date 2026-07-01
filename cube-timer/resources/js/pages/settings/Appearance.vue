@@ -18,11 +18,18 @@ const form = useForm({
 
 const selectTheme = (themeId: string) => {
     form.theme_name = themeId;
-
     const themeConfig = themesData[themeId as keyof typeof themesData] || themesData['default_dark'];
+
     Object.entries(themeConfig.colors).forEach(([cssVariable, value]) => {
         document.documentElement.style.setProperty(cssVariable, value);
     });
+
+    document.documentElement.style.setProperty('--sidebar-background', themeConfig.colors['--card']);
+    document.documentElement.style.setProperty('--sidebar-border', themeConfig.colors['--border']);
+    document.documentElement.style.setProperty('--sidebar-foreground', themeConfig.colors['--foreground']);
+    document.documentElement.style.setProperty('--sidebar-accent', themeConfig.colors['--muted']);
+    document.documentElement.style.setProperty('--sidebar-accent-foreground', themeConfig.colors['--primary']);
+    document.documentElement.style.setProperty('--sidebar-ring', themeConfig.colors['--ring']);
 
     form.patch('/settings/appearance', {
         preserveScroll: true,
@@ -50,16 +57,22 @@ defineOptions({ layout: { breadcrumbs: [{ title: 'Appearance settings', href: ed
                 v-for="(theme, themeId) in themesData"
                 :key="themeId"
                 @click="selectTheme(themeId)"
-                class="px-4 py-3 rounded-md font-mono text-sm font-bold border transition-all text-left flex items-center justify-between"
-                :class="form.theme_name === themeId ? 'ring-2 ring-blue-500 shadow-md' : 'opacity-80 hover:opacity-100'"
+                class="px-4 py-3 rounded-xl font-mono text-sm font-bold border-2 transition-all text-left flex items-center justify-between"
+                :class="form.theme_name === themeId ? 'scale-[1.02] shadow-lg' : 'opacity-80 hover:opacity-100 hover:scale-[1.01]'"
                 :style="{
-                    backgroundColor: theme.colors['--background'],
-                    color: theme.colors['--foreground'],
-                    borderColor: theme.colors['--border']
+                    backgroundColor: theme.colors['--card'],
+                    borderColor: form.theme_name === themeId ? theme.colors['--primary'] : theme.colors['--border']
                 }"
             >
-                <span>{{ theme.name }}</span>
-                <span v-if="form.theme_name === themeId" :style="{ color: theme.colors['--primary'] }">★</span>
+                <div class="flex items-center gap-2">
+                    <span :style="{ color: theme.colors['--foreground'] }">{{ theme.name }}</span>
+                </div>
+
+                <div class="flex gap-1.5 items-center">
+                    <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: theme.colors['--primary'] }"></div>
+                    <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: theme.colors['--accent'] }"></div>
+                    <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: theme.colors['--foreground'] }"></div>
+                </div>
             </button>
 
         </div>
